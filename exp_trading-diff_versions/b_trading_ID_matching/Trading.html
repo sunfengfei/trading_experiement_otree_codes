@@ -1,0 +1,154 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}
+    Trading Interface
+{% endblock %}
+
+{% block content %}
+    <!-- 市场价格显示 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Market Price:</h4>
+            {% if subsession.field_maybe_none('last_trade_a') and subsession.field_maybe_none('last_trade_b') %}
+                <p>Last trade ratio: {{ subsession.field_maybe_none('last_trade_a') }}A : {{ subsession.field_maybe_none('last_trade_b') }}B</p>
+            {% else %}
+                <p>No trades have occurred yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 当前持有量 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Current Holdings:</h4>
+            <p>Good A: {{ player.current_a }}</p>
+            <p>Good B: {{ player.current_b }}</p>
+            
+            <h4>Your Utility Function:</h4>
+            {% if player.utility_type == 'CD' %}
+                <p>U = A<sup>{{ player.alpha }}</sup> × B<sup>{{ player.beta }}</sup></p>
+            {% elif player.utility_type == 'LINEAR' %}
+                <p>U = {{ player.alpha }}A + {{ player.beta }}B</p>
+            {% else %}
+                <p>U = min({{ player.alpha }}A, {{ player.beta }}B)</p>
+            {% endif %}
+            <p><strong>Current Utility: {{ player.calculate_utility }}</strong></p>
+        </div>
+    </div>
+
+  
+    <!-- 交易表单 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Execute Trade:</h4>
+            <p>Your trading partner ID: <c> {{ player.partner_id }}</c></p>
+        
+            <!-- Trade A -->
+            <div class="mb-3">
+                <label>Trade A:</label>
+                <div class="d-flex flex-column" style="gap: 0.5rem">
+                    <div class="btn-group mb-2" role="group">
+                        <button type="button" class="btn btn-outline-success" style="width: 100px" onclick="setExecuteSignA('buy')">Buy (+)</button>
+                        <button type="button" class="btn btn-outline-success" style="width: 100px" onclick="setExecuteSignA('sell')">Sell (-)</button>
+                    </div>
+                    <input type="hidden" id="id_trade_a_is_buy" name="trade_a_is_buy" value="true">
+                    {{ formfield 'trade_a' label="" }}
+                </div>
+            </div>
+
+            
+            <!-- Trade B -->
+            <div class="mb-3">
+                <label>Trade B:</label>
+                <div class="d-flex flex-column" style="gap: 0.5rem">
+                    <div class="btn-group mb-2" role="group">
+                        <button type="button" class="btn btn-outline-success" style="width: 100px" onclick="setExecuteSignB('buy')">Buy (+)</button>
+                        <button type="button" class="btn btn-outline-success" style="width: 100px" onclick="setExecuteSignB('sell')">Sell (-)</button>
+                    </div>
+                    <input type="hidden" id="id_trade_b_is_buy" name="trade_b_is_buy" value="true">
+                    {{ formfield 'trade_b' label="" }}
+                </div>
+            </div>
+
+            <div id="current_utility" class="alert alert-success">
+                New Utility After Trade: <span id="new_utility_value">{{ player.calculate_utility }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="btn-group">
+     {{ next_button }}
+    </div>
+
+    <script>
+        // ExecuteSign tracking
+        let executeSign = { A: 'buy', B: 'sell' };
+
+        function setExecuteSignA(sign) {
+            executeSign.A = sign;
+            executeSign.B = (sign === 'buy') ? 'sell' : 'buy';
+            
+            document.getElementById('id_trade_a_is_buy').value = (sign === 'buy').toString();
+            document.getElementById('id_trade_b_is_buy').value = (sign !== 'buy').toString();
+            
+            updateExecuteButtonStyles('A');
+            updateExecuteButtonStyles('B');
+            calculateNewUtility();
+        }
+
+        function setExecuteSignB(sign) {
+            executeSign.B = sign;
+            executeSign.A = (sign === 'buy') ? 'sell' : 'buy';
+            
+            document.getElementById('id_trade_b_is_buy').value = (sign === 'buy').toString();
+            document.getElementById('id_trade_a_is_buy').value = (sign !== 'buy').toString();
+            
+            updateExecuteButtonStyles('B');
+            updateExecuteButtonStyles('A');
+            calculateNewUtility();
+        }
+
+        function updateExecuteButtonStyles(good) {
+            const signButtons = document.querySelectorAll(`[onclick^="setExecuteSign${good}"]`);
+            signButtons.forEach(btn => {
+                btn.classList.remove('active');
+                const isBuy = btn.textContent.includes('Buy');
+                if ((isBuy && executeSign[good] === 'buy') || (!isBuy && executeSign[good] === 'sell')) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function calculateNewUtility() {
+            let tradeA = parseFloat(document.getElementById('id_trade_a').value || 0);
+            let tradeB = parseFloat(document.getElementById('id_trade_b').value || 0);
+            if (executeSign.A === 'sell') tradeA = -tradeA;
+            if (executeSign.B === 'sell') tradeB = -tradeB;
+
+            const currentA = {{ player.current_a }};
+            const currentB = {{ player.current_b }};
+            const newA = currentA + tradeA;
+            const newB = currentB + tradeB;
+
+            let newUtility;
+            {% if player.utility_type == 'CD' %}
+                newUtility = Math.pow(newA, {{ player.alpha }}) * Math.pow(newB, {{ player.beta }});
+            {% elif player.utility_type == 'LINEAR' %}
+                newUtility = {{ player.alpha }} * newA + {{ player.beta }} * newB;
+            {% else %}
+                newUtility = Math.min({{ player.alpha }} * newA, {{ player.beta }} * newB);
+            {% endif %}
+            
+            document.getElementById('new_utility_value').textContent = newUtility.toFixed(2);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateExecuteButtonStyles('A');
+            updateExecuteButtonStyles('B');
+            document.getElementById('id_trade_a').addEventListener('input', calculateNewUtility);
+            document.getElementById('id_trade_b').addEventListener('input', calculateNewUtility);
+        });
+    </script>
+{% endblock %}

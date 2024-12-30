@@ -1,0 +1,153 @@
+{% block title %}
+    Trading Interface
+{% endblock %}
+
+{% block content %}
+    <!-- 市场价格显示 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Market Price:</h4>
+            {% if subsession.field_maybe_none('last_trade_a') and subsession.field_maybe_none('last_trade_b') %}
+                <p>Last trade ratio: {{ subsession.field_maybe_none('last_trade_a') }}A : {{ subsession.field_maybe_none('last_trade_b') }}B</p>
+            {% else %}
+                <p>No trades have occurred yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 当前持有量 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Current Holdings:</h4>
+            <p>Good A: {{ player.current_a }}</p>
+            <p>Good B: {{ player.current_b }}</p>
+            
+            <h4>Your Utility Function:</h4>
+            {% if player.utility_type == 'CD' %}
+                <p>U = A<sup>{{ player.alpha }}</sup> × B<sup>{{ player.beta }}</sup></p>
+            {% elif player.utility_type == 'LINEAR' %}
+                <p>U = {{ player.alpha }}A + {{ player.beta }}B</p>
+            {% else %}
+                <p>U = min({{ player.alpha }}A, {{ player.beta }}B)</p>
+            {% endif %}
+            <p><strong>Current Utility: {{ player.calculate_utility }}</strong></p>
+        </div>
+    </div>
+
+    <!-- What-If Calculator -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>What-If Calculator</h4>
+            
+            <div class="mb-3">
+                <label>Change in Good A:</label>
+                <div class="d-flex flex-column" style="gap: 0.5rem">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" style="width: 100px" onclick="setSignA('buy')">Buy (+)</button>
+                        <button type="button" class="btn btn-outline-primary" style="width: 100px" onclick="setSignA('sell')">Sell (-)</button>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <!-- 根据需要保留1~10按钮 -->
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 1)">1</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 2)">2</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 3)">3</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 4)">4</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 5)">5</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 6)">6</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 7)">7</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 8)">8</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 9)">9</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('A', 10)">10</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label>Change in Good B:</label>
+                <div class="d-flex flex-column" style="gap: 0.5rem">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" style="width: 100px" onclick="setSignB('buy')">Buy (+)</button>
+                        <button type="button" class="btn btn-outline-primary" style="width: 100px" onclick="setSignB('sell')">Sell (-)</button>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 1)">1</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 2)">2</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 3)">3</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 4)">4</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 5)">5</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 6)">6</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 7)">7</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 8)">8</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 9)">9</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="selectChange('B', 10)">10</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="calc_result" class="alert alert-info mt-3"></div>
+        </div>
+    </div>
+    {{ formfields }}
+    {{ next_button }}
+
+<script>
+     // ----------- What-If Calculator逻辑 -----------
+     let calcState = {
+        A: { sign: 'buy', value: 0 },
+        B: { sign: 'buy', value: 0 }
+    };
+
+    function setSignA(sign) {
+        calcState.A.sign = sign;
+        updateCalcButtonStyles('A', sign);
+        calculateUtility();
+    }
+    function setSignB(sign) {
+        calcState.B.sign = sign;
+        updateCalcButtonStyles('B', sign);
+        calculateUtility();
+    }
+    function selectChange(good, val) {
+        calcState[good].value = val;
+        calculateUtility();
+    }
+    function updateCalcButtonStyles(good, sign) {
+        // 给“Buy (+)”或“Sell(-)”对应的按钮添加active
+        const signButtons = document.querySelectorAll(`[onclick^="setSign${good}"]`);
+        signButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (
+                (btn.textContent.includes('Buy') && sign === 'buy') ||
+                (btn.textContent.includes('Sell') && sign === 'sell')
+            ) {
+                btn.classList.add('active');
+            }
+        });
+    }
+    function calculateUtility() {
+        const currentA = {{ player.current_a }};
+        const currentB = {{ player.current_b }};
+        const changeA = calcState.A.sign === 'buy' ? calcState.A.value : -calcState.A.value;
+        const changeB = calcState.B.sign === 'buy' ? calcState.B.value : -calcState.B.value;
+        const newA = currentA + changeA;
+        const newB = currentB + changeB;
+
+        let utility;
+        {% if player.utility_type == 'CD' %}
+            utility = Math.pow(newA, {{ player.alpha }}) * Math.pow(newB, {{ player.beta }});
+        {% elif player.utility_type == 'LINEAR' %}
+            utility = {{ player.alpha }} * newA + {{ player.beta }} * newB;
+        {% else %}
+            utility = Math.min({{ player.alpha }} * newA, {{ player.beta }} * newB);
+        {% endif %}
+        
+        document.getElementById('calc_result').innerHTML = `
+            <strong>Trade Preview:</strong><br>
+            Change in A: ${changeA >= 0 ? '+' + changeA : changeA}<br>
+            Change in B: ${changeB >= 0 ? '+' + changeB : changeB}<br>
+            New quantities would be: A=${newA}, B=${newB}<br>
+            New utility would be: ${utility.toFixed(2)}
+        `;
+    }
+</script>
+{% endblock %}

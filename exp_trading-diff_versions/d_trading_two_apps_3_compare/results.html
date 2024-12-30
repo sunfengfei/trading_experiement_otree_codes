@@ -1,0 +1,77 @@
+{% block title %}
+    Trading Results
+{% endblock %}
+
+{% block content %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Market Price:</h4>
+            {% if subsession.last_trade_a != 0 or subsession.last_trade_b != 0 %}
+                <p>Last trade ratio: {{ subsession.last_trade_a }}A : {{ subsession.last_trade_b }}B</p>
+            {% else %}
+                <p>No trades have occurred yet</p>
+            {% endif %}
+        </div>
+    </div>
+    <h4>Your Initial Holdings:</h4>
+    <p>Good A: {{ player.endowment_a  }}</p>
+    <p>Good B: {{ player.endowment_b }} </p>
+
+    <h4>Your Final Holdings:</h4>
+    <p>Good A: {{ final_a }}</p>
+    <p>Good B: {{ final_b }}</p>
+
+    <h4>Your Utility Function:</h4>
+    {% if utility_type == 'CD' %}
+        <p>U = A<sup>{{ alpha }}</sup> × B<sup>{{ beta }}</sup></p>
+    {% elif utility_type == 'LINEAR' %}
+        <p>U = {{ alpha }}A + {{ beta }}B</p>
+    {% elif utility_type == 'MIN' %}
+        <p>U = min({{ alpha }}A, {{ beta }}B)</p>
+    {% endif %}
+
+    <h4>Your Final Utility Level:</h4>
+    <p>{{ final_utility }}</p>
+
+    <!-- 添加调试信息 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Debug Information:</h4>
+            <p>Initial Utility Value: {% if initial_utility %}{{ initial_utility }}{% else %}Not Set{% endif %}</p>
+            <p>Final Utility Value: {% if final_utility %}{{ final_utility }}{% else %}Not Set{% endif %}</p>
+            <p>Initial Utility Type: {% if initial_utility %}{{ initial_utility }}{% else %}None{% endif %}</p>
+            <p>Final Utility Type: {% if final_utility %}{{ final_utility }}{% else %}None{% endif %}</p>
+        </div>
+    </div>
+
+    <!-- 比较部分
+    {% if initial_utility and final_utility %}
+        <h4>Utility Comparison:</h4>
+        {% if final_utility > initial_utility %}
+            <div class="alert alert-success">
+                <p>Congratulations! Your utility has increased after trading.</p>
+                <p>Initial utility: {{ initial_utility }}</p>
+                <p>Final utility: {{ final_utility }}</p>
+            </div>
+        {% elif final_utility < initial_utility %}
+            <div class="alert alert-warning">
+                <p>Your utility has decreased after trading.</p>
+                <p>Initial utility: {{ initial_utility }}</p>
+                <p>Final utility: {{ final_utility }}</p>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p>Your utility level remained the same.</p>
+                <p>Utility level: {{ initial_utility }}</p>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-warning">
+            <p>Unable to compare utilities: some values are missing.</p>
+            <p>Initial utility: {% if initial_utility %}{{ initial_utility }}{% else %}Not Set{% endif %}</p>
+            <p>Final utility: {% if final_utility %}{{ final_utility }}{% else %}Not Set{% endif %}</p>
+        </div>
+    {% endif %} -->
+
+    {{ next_button }}
+{% endblock %}

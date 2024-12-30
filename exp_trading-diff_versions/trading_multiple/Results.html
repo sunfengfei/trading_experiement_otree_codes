@@ -1,0 +1,37 @@
+{% block title %}
+    Trading Results
+{% endblock %}
+
+{% block content %}
+    <h4>Your Final Holdings:</h4>
+    <p>Good A: {{ final_a }}</p>
+    <p>Good B: {{ final_b }}</p>
+
+    <h4>Your Utility Function:</h4>
+    {% if player.utility_type == 'CD' %}
+        <p>U = A<sup>{{ player.alpha }}</sup> × B<sup>{{ player.beta }}</sup></p>
+    {% elif player.utility_type == 'LINEAR' %}
+        <p>U = {{ player.alpha }}A + {{ player.beta }}B</p>
+    {% else %}
+        <p>U = min({{ player.alpha }}A, {{ player.beta }}B)</p>
+    {% endif %}
+
+    <h4>Your Final Utility Level:</h4>
+    <p>{{ final_utility }}</p>
+
+    {% if final_utility > player.calculated_utility %}
+        <div class="alert alert-success">
+            <p>Congratulations! Your utility has increased after trading.</p>
+        </div>
+    {% elif final_utility < player.calculated_utility %}
+        <div class="alert alert-warning">
+            <p>Your utility has decreased after trading.</p>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>Your utility level remained the same.</p>
+        </div>
+    {% endif %}
+
+    {{ next_button }}
+{% endblock %}

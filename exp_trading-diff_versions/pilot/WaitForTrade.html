@@ -1,0 +1,35 @@
+
+{% block title %}
+    Waiting for Trading Partner
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="text-center">
+                <h4>Your Trade Details:</h4>
+                <p>Trading Partner ID: {{ player.partner_id }}</p>
+                <p>Your proposed trade: 
+                    {% if player.trade_a > 0 %}
+                        Buy {{ player.trade_a }} of Good A
+                    {% else %}
+                        Sell {{ player.trade_a|abs }} of Good A
+                    {% endif %}
+                    and
+                    {% if player.trade_b > 0 %}
+                        Buy {{ player.trade_b }} of Good B
+                    {% else %}
+                        Sell {{ player.trade_b|abs }} of Good B
+                    {% endif %}
+                </p>
+                
+                <div class="spinner-border text-primary mt-4" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                
+                <p class="mt-4">Waiting for {{ player.partner_id }} to input matching trade...</p>
+                <p class="text-muted">Please wait. The page will automatically update when your partner submits their trade.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

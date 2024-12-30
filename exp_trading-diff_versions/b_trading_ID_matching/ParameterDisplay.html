@@ -1,0 +1,68 @@
+
+{% block title %}
+    Utility Parameters and Initial Endowment
+{% endblock %}
+
+{% block content %}
+<h4>Your Utility Function:</h4>
+    {% if player.utility_type == 'CD' %}
+        <p>U = A<sup>{{ player.alpha }}</sup> × B<sup>{{ player.beta }}</sup></p>
+    {% elif player.utility_type == 'LINEAR' %}
+        <p>U = {{ player.alpha }}A + {{ player.beta }}B</p>
+    {% else %}
+        <p>U = min({{ player.alpha }}A, {{ player.beta }}B)</p>
+    {% endif %}
+
+    <h4>Your Initial Endowment:</h4>
+    <p>Good A: {{ player.endowment_a }}</p>
+    <p>Good B: {{ player.endowment_b }}</p>
+
+    <div class="alert alert-info">
+        <p><strong>Hint:</strong> Please calculate your initial utility level using the given function and endowment.</p>
+        {% if player.utility_type == 'CD' %}
+            <p>For Cobb-Douglas function, you can use a calculator. Round your answer to 2 decimal places.</p>
+        {% endif %}
+    </div>
+
+    <p><strong>Please calculate your initial utility level:</strong></p>
+    {{ formfields }}
+
+    {% if player.utility_type == 'CD' %}
+        <button type="button" class="btn btn-info" onclick="showCalculator()">Open Calculator</button>
+        <div id="calculator" style="display:none; margin-top: 10px;" class="card">
+            <div class="card-body">
+                <div class="form-group">
+                    <input type="number" id="num1" step="0.01" placeholder="Enter A value" class="form-control" style="display: inline-block; width: 200px; margin-right: 10px;">
+                    <input type="number" id="num2" step="0.01" placeholder="Enter B value" class="form-control" style="display: inline-block; width: 200px; margin-right: 10px;">
+                    <button class="btn btn-primary" onclick="calculate()">Calculate</button>
+                </div>
+                <p id="result" class="mt-3 font-weight-bold"></p>
+            </div>
+        </div>
+
+        <script>
+            function showCalculator() {
+                const calc = document.getElementById('calculator');
+                calc.style.display = calc.style.display === 'none' ? 'block' : 'none';
+            }
+
+            function calculate() {
+                const a = parseFloat(document.getElementById('num1').value);
+                const b = parseFloat(document.getElementById('num2').value);
+                const alpha = {{ player.alpha }};
+                const beta = {{ player.beta }};
+                
+                if (isNaN(a) || isNaN(b)) {
+                    document.getElementById('result').innerHTML = 'Please enter valid numbers';
+                    return;
+                }
+                
+                const result = Math.pow(a, alpha) * Math.pow(b, beta);
+                document.getElementById('result').innerHTML = 
+                    'Result: ' + result.toFixed(2);
+            }
+        </script>
+    {% endif %}
+
+    {{ next_button }}
+{% endblock %}
