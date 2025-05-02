@@ -1,0 +1,31 @@
+{{ block title }}
+    Select Trading Partner
+{{ endblock }}
+
+{{ block content }}
+
+<div class="card mb-4">
+    <div class="card-header">Your Information</div>
+    <div class="card-body">
+        <p><strong>Student ID:</strong> {{ player.student_id }}</p>
+        <p><strong>Utility Type:</strong> {{ player.utility_type }}</p>
+        <p><strong>Current Utility:</strong> {{ player.calculate_utility }}</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">Select Trading Partner</div>
+    <div class="card-body">
+        <p>Please enter the student ID of the participant you want to trade with:</p>
+        
+        {{ formfields }}
+        
+        <div class="alert alert-info mt-3">
+            <p><strong>Note:</strong> Make sure your trading partner enters your student ID ({{ player.student_id }}) when they reach this page.</p>
+        </div>
+    </div>
+</div>
+
+{{ next_button }}
+
+{{ endblock }}
